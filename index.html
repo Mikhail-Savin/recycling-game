@@ -167,7 +167,7 @@
       el.className = 'prep'; el.dataset.prep = st.key;
       const frac = (i + 1) / (preps.length + 1);
       el.style.left = `calc(${frac * 100}% - 100px)`;
-      el.style.top = `200px`;
+      el.style.top = `calc(${window.innerHeight / 2}px - 200px - 150px)`;
       const img = document.createElement('img'); img.src = st.img;
       const label = document.createElement('div'); label.className = 'prep-label'; label.textContent = st.label;
       el.appendChild(img); el.appendChild(label);
