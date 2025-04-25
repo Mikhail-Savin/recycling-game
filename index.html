@@ -137,6 +137,7 @@
     }
     #result-box {
       width: 50%;
+      font-size: 40px;
       background: #41277c;
       padding: 20px;
       border-radius: 8px;
@@ -259,7 +260,6 @@
       name: "Newspaper",
       type: "paper",
       img: "images/newspaper.png",
-      requireCut: true,
       shredded: false,
       cutImg: "images/newspaper-cut.png",
     },
@@ -529,7 +529,7 @@
         break;
       case "cut":
         if (item.type === "electronics") return explode("Scissors");
-        if (item.requireCut && !item.shredded) {
+        if (!item.shredded && item.shredded != null) {
           item.shredded = true;
           updateImg(idx, item.cutImg);
         }
@@ -619,7 +619,7 @@
       if (wrongBin.length || unprepared.length) {
         msg += "<br><br><strong>Issues:</strong><br><br>";
         wrongBin.forEach(i => {
-          msg += `<div>${i.name}: wrong bin (placed in ${i.droppedBin || "none"})</div>`;
+          msg += `<div>${i.name}: wrong bin</div>`;
         });
         unprepared.forEach(i => {
           if (!wrongBin.includes(i))
@@ -642,7 +642,8 @@
   function reset() {
     items.forEach((item) => {
       item.cleaned = !item.requireClean;
-      item.shredded = !item.requireCut;
+      if (item.shredded != null)
+        item.shredded = false;
       item.discharged = !item.requireDischarge;
       if (item.baked != null)
         item.baked = false;
