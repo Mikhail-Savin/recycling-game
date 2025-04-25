@@ -6,6 +6,10 @@
   <title>Recycling Sorter</title>
   <style>
     /* ===== Layout & visual ===== */
+    :root {
+      --gap: -10px;
+      --row-pad: 0.5rem;
+    }
     body {
       font-family: Arial, sans-serif;
       background: #f2f0f7;
@@ -14,7 +18,9 @@
       display: flex;
       flex-direction: column;
       -webkit-user-select: none;
-      user-select: none; /* avoid text selection while dragging */
+      user-select: none;
+      overflow: hidden;
+      touch-action: none;
     }
     h1 {
       text-align: center;
@@ -22,26 +28,73 @@
       color: #3f2d6b;
     }
     #game-container {
-      position: relative;
+      display: flex;
       flex: 1;
-      overflow: hidden; /* keep drag‑ghost inside viewport */
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    /* --- ROWS -------------------------------------------------------- */
+    #item-pool,
+    #prep-stations {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: var(--gap);
+      padding-block: var(--row-pad);
+    }
+    #bins {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: -40px;
+      padding-block: var(--row-pad);
     }
     #item-pool {
-      position: absolute;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
+      grid-row:unset;
     }
+
+    #prep-stations,
+    #bins{
+      grid-row:unset;
+      justify-content: space-between;
+    }
+
+    /* --- ICON SIZES -------------------------------------------------- */
     .item,
-    .drag‑ghost {
-      width: 80px;
-      height: 80px;
+    .drag-ghost {
+      width: clamp(70px, 14vw, 100px);
+      height: clamp(70px, 14vw, 100px);
+
       touch-action: none; /* disable native scrolling while dragging */
+      transition: transform 0.2s ease-out; /* smooth drop */
     }
     .item img,
-    .drag‑ghost img {
+    .drag-ghost img {
+      max-width: 100%;
+      pointer-events: none;
+    }
+    .prep {
+      width: clamp(90px, 18vw, 160px);
+      height: clamp(90px, 18vw, 160px);
+      /*margin-inline: -20px;*/
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .bin {
+      width: clamp(90px, 18vw, 160px);
+      height: clamp(90px, 18vw, 160px);
+      margin-inline: -20px;
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .prep img,
+    .bin img {
       max-width: 100%;
       pointer-events: none;
     }
@@ -50,27 +103,16 @@
       border-radius: 8px;
     }
 
-    #prep-stations,
-    #bins {
-      width: 100%;
-      pointer-events: none; /* children take pointer events, containers do not */
+    @keyframes changedFlash {
+      0%   { transform: scale(0.5);   box-shadow: 0 0 0 0 rgba(255,255,255,0.9); }
+      50%  { transform: scale(1.2); box-shadow: 0 0 25px 50px rgba(201, 89, 255, 1); }
+      100% { transform: scale(1);   box-shadow: 0 0 0 0 rgba(255,255,255,0); }
     }
-    #prep-stations {
-      top: 150px;
-      height: 300px;
+    .changed {
+      animation: changedFlash 0.7s ease-out;
+      border-radius: 28px;
     }
-    .prep,
-    .bin {
-      width: 160px;
-      height: 160px;
-      position: absolute;
-      pointer-events: auto;
-    }
-    .prep img,
-    .bin img {
-      max-width: 100%;
-      pointer-events: none;
-    }
+
     .prep-label,
     .bin-label {
       text-align: center;
@@ -101,7 +143,15 @@
       color: white;
     }
     /* simple confetti / boom gifs keep original IDs */
-    #explosion-overlay,
+    #explosion-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 10000;
+    }
     #celebrate-overlay {
       display: none;
       position: fixed;
@@ -384,6 +434,7 @@
     // create ghost
     const rect = origin.getBoundingClientRect();
     const ghost = origin.cloneNode(true);
+    ghost.classList.remove("changed");
     ghost.classList.add("drag‑ghost");
     ghost.style.position = "absolute";
     ghost.style.left = `${rect.left}px`;
@@ -450,9 +501,21 @@
     dragState = null;
   }
 
-  /* =========================================================
-     DROP LOGIC (moved from original attachHighlight)
-  ========================================================= */
+  /* ===================================================================
+     DROP LOGIC
+  ===================================================================*/
+
+  function addChangedEffect(idx) {
+    const itemEl = document.querySelector(`.item[data-index='${idx}']`);
+    if (itemEl) {
+      itemEl.classList.remove("changed"); // reset if still animating
+      // force reflow to restart animation when same action repeats
+      void itemEl.offsetWidth;
+      itemEl.classList.add("changed");
+    }
+  }
+
+
   function handlePrepDrop(idx, action) {
     const item = items[idx];
     switch (action) {
@@ -507,6 +570,7 @@
   function updateImg(idx, src) {
     const img = document.querySelector(`.item[data-index='${idx}'] img`);
     if (img) img.src = src;
+    addChangedEffect(idx);
   }
 
   /* =========================================================
@@ -530,14 +594,35 @@
     localStorage.removeItem('code');
     celebrateOverlay.style.display = "block";
     overlay.style.display = "flex";
+    overlay.style.fontSize = '40px';
     setTimeout(() => {
       overlay.style.opacity = "1";
     }, 3000);
   }
 
   function lose() {
-    resultMsg.textContent =
-            "Some items are recycled wrong or missing preparation. Resetting...";
+    let msg = "Some items are recycled wrong or missing preparation. Resetting...";
+    if (resetCount >= 2) {
+      const wrongBin = items.filter(i => i.assigned && i.droppedBin !== i.type);
+      const unprepared = items.filter(i =>
+              (i.requireClean && !i.cleaned) ||
+              (i.requireCut && !i.shredded) ||
+              (i.requireDischarge && !i.discharged) ||
+              (i.requireBake && !i.baked) ||
+              (i.requireMagnet && !i.magnetized)
+      );
+      if (wrongBin.length || unprepared.length) {
+        msg += "<br><br><strong>Issues:</strong><br><br>";
+        wrongBin.forEach(i => {
+          msg += `<div>${i.name}: wrong bin (placed in ${i.droppedBin || "none"})</div>`;
+        });
+        unprepared.forEach(i => {
+          if (!wrongBin.includes(i))
+            msg += `<div>${i.name}: needs preparation</div>`;
+        });
+      }
+    }
+    resultMsg.innerHTML = msg;
     overlay.style.display = "flex";
     setTimeout(() => {
       overlay.style.opacity = "1";
