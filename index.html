@@ -11,7 +11,7 @@
       --row-pad: 0.5rem;
     }
     body {
-      font-family: Arial, sans-serif;
+      font-family: system-ui, -apple-system, Arial, sans-serif;
       background: #f2f0f7;
       margin: 0;
       height: 100vh;
@@ -136,6 +136,7 @@
       transition: opacity 1s ease-out;
     }
     #result-box {
+      width: 50%;
       background: #41277c;
       padding: 20px;
       border-radius: 8px;
@@ -589,15 +590,19 @@
     prepOk && placementOk ? win() : lose();
   }
 
+  const resultCode = document.createElement('p');
+  resultCode.style.cssText = 'font-size:128px;margin:20px;';   // << big!
+  document.getElementById('result-box').appendChild(resultCode);
+
   function win() {
-    resultMsg.textContent = `Well done! Code: ${code}`;
+    resultMsg.textContent = 'Well done!';
+    resultCode.textContent = `${code}`;
     localStorage.removeItem('code');
-    celebrateOverlay.style.display = "block";
-    overlay.style.display = "flex";
+
+    celebrateOverlay.style.display = 'block';
+    overlay.style.display = 'flex';
     overlay.style.fontSize = '40px';
-    setTimeout(() => {
-      overlay.style.opacity = "1";
-    }, 3000);
+    setTimeout(() => { overlay.style.opacity = '1'; }, 3000);
   }
 
   function lose() {
