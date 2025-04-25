@@ -253,6 +253,25 @@
     },
   ];
 
+  /* ===================================================================
+       BACKGROUND IMAGE PREFETCH
+    ===================================================================*/
+  (function prefetch() {
+    const IMG_SET = new Set(["images/explosion.gif", "images/celebrate.gif"]);
+    preps.forEach(p => IMG_SET.add(p.img));
+    bins.forEach(b => IMG_SET.add(b.img));
+    items.forEach(it => {
+      IMG_SET.add(it.img);
+      ["cleanImg","cutImg","dischargeImg","bakeImg","magnetImg"].forEach(k => {
+        if (it[k]) IMG_SET.add(it[k]);
+      });
+    });
+    IMG_SET.forEach(src => {
+      const img = new Image();
+      img.src = src; // browser fetches & caches silently
+    });
+  })();
+
   /* =========================================================
      UTILS
   ========================================================= */
