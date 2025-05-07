@@ -187,11 +187,16 @@
   <div id="celebrate-overlay"><img src="images/celebrate.gif" alt="Celebrate" /></div>
 </div>
 <script>
+  function fromBase64Unicode(base64) {
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
   /* =========================================================
      GAME DATA (unchanged from original)
   ========================================================= */
   const urlParams = new URLSearchParams(window.location.search);
-  let code = urlParams.get("code");
+  let code = 'PvCfjLvwn5SR'
   let resetCount = 0;
 
   const overlay = document.getElementById("result-overlay");
@@ -601,7 +606,7 @@
 
   function win() {
     resultMsg.textContent = 'Well done!';
-    resultCode.textContent = `${code}`;
+    resultCode.textContent = `${fromBase64Unicode(code)}`;
     // localStorage.removeItem('code');
 
     celebrateOverlay.style.display = 'block';
