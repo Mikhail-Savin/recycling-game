@@ -409,7 +409,7 @@
     let pharmacyOnEdge = true;
     while (pharmacyOnEdge) {
       shuffleArray(bins);
-      pharmacyOnEdge = bins[0].type === "pharmacy" || bins[bins.legth - 1].type === "pharmacy";
+      pharmacyOnEdge = bins[0].type === "pharmacy" || bins[bins.length - 1].type === "pharmacy";
     }
     bins.forEach((bn, i) => {
       const el = document.createElement("div");
